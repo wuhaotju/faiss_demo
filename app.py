@@ -37,11 +37,6 @@ def load_fea_from_file(fname):
 def build_index_fun(path):
     # path : './item_vec.txt'
     fv_mat, fea_s_list, key_d = load_fea_from_file(path)
-    print(fv_mat)
-    print('-------------------')
-    print(fea_s_list)
-    print('-------------------')
-    print(key_d)
 
     # cluster_num 是聚类的数量
     M = fv_mat.shape[1] // 4
@@ -49,7 +44,7 @@ def build_index_fun(path):
     # metric_type
     metric_type = faiss.METRIC_INNER_PRODUCT
     # 创建索引
-    print(M, cluster_num, "aaaaaaaaaaaaaaaa")
+    
     index = faiss.index_factory(fv_mat.shape[1], f"IVF{cluster_num},PQ{M}x4fs", metric_type)
 
     # 正则化矩阵特征向量
@@ -102,6 +97,10 @@ def load_index(index_dir):
     
 # 向量检索
 def search():
+    # 推荐的结果集（商品ID，得分）
+    res_ans = []
+    # 检索最近邻的数量
+    k = 10
     # 输入一个index库里的向量，进行检索
     index, index_refine, keys, key_d = load_index('./item_vec.txt')
     
@@ -110,11 +109,22 @@ def search():
     i = key_d[fs]
     # 根据位置获取
     index_refine.make_direct_map()
-    fv = index_refine.reconstruct(1)
-    print(fv)
+    fv = index_refine.reconstruct(i)
+    
+    # 检索必须是矩阵的形式
+    matrix = np.expand_dims(fv, axis=0)
+    D, I = index_refine.search(matrix, k)
+    # 获取结果集
+    res_id_list, res_dis_list = I[0], D[0]
+    for i in range(len(res_id_list)):
+        res_ans.append((keys[res_id_list[i]], res_dis_list[i]))
+ 
+        
+    print(res_ans)
     
    
- 
-# write_index('./item_vec.txt')
+# load_fea_from_file('./item_vec.txt')
+# build_index_fun('./item_vec.txt')
+write_index('./item_vec.txt')
 search()
     
